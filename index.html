@@ -472,4 +472,81 @@
 
       function saveDraft() {
         try {
-          localStorage.setItem(DRAFT_KEY, JSON.stringify(
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(getDraftData()));
+          alert('Draft saved successfully in this browser.');
+        } catch (error) {
+          console.error('Unable to save invoice draft:', error);
+          alert('Unable to save the draft. Check your browser storage settings.');
+        }
+      }
+
+      function loadDraft(showMessage = true) {
+        const saved = localStorage.getItem(DRAFT_KEY);
+        if (!saved) {
+          if (showMessage) alert('No saved draft found in this browser.');
+          return false;
+        }
+
+        try {
+          const data = JSON.parse(saved);
+          byId('invoiceNumber').value = data.invoiceNumber ?? 'INV-2026-001';
+          byId('issueDate').value = data.issueDate ?? '';
+          byId('dueDate').value = data.dueDate ?? '';
+          byId('currency').value = data.currency ?? 'PHP';
+          byId('fromInfo').value = data.fromInfo ?? '';
+          byId('toInfo').value = data.toInfo ?? '';
+          byId('notes').value = data.notes ?? '';
+          byId('discountRate').value = data.discountRate ?? 0;
+          byId('taxRate').value = data.taxRate ?? 12;
+          byId('taxTypeSelect').value = data.taxType ?? 'VAT';
+          byId('customTaxLabelInput').value = data.customTaxLabel ?? '';
+          if (data.theme) {
+            byId('themeSelect').value = data.theme;
+            document.documentElement.setAttribute('data-theme', data.theme);
+          }
+          if (Array.isArray(data.items) && data.items.length > 0) {
+            items = data.items.map((item) => ({ ...item }));
+          }
+          updateTaxLabel();
+          renderItems();
+          if (showMessage) alert('Draft loaded successfully.');
+          return true;
+        } catch (error) {
+          console.error('Unable to parse saved invoice draft:', error);
+          if (showMessage) alert('Unable to load draft. The saved file might be corrupted.');
+          return false;
+        }
+      }
+
+      // Event Listeners
+      byId('addItemButton').addEventListener('click', () => {
+        items.push({ description: '', qty: 1, price: 0 });
+        renderItems();
+      });
+      byId('currency').addEventListener('change', renderItems);
+      byId('discountRate').addEventListener('input', calculateTotals);
+      byId('taxRate').addEventListener('input', calculateTotals);
+      byId('taxTypeSelect').addEventListener('change', () => {
+        updateTaxLabel();
+        calculateTotals();
+      });
+      byId('customTaxLabelInput').addEventListener('input', updateTaxLabel);
+      byId('themeSelect').addEventListener('change', (e) => {
+        document.documentElement.setAttribute('data-theme', e.target.value);
+      });
+      byId('saveDraftButton').addEventListener('click', saveDraft);
+      byId('loadDraftButton').addEventListener('click', () => loadDraft(true));
+      byId('printButton').addEventListener('click', () => window.print());
+
+      // Initial Setup on Page Load
+      updateTaxLabel();
+      renderItems();
+      loadDraft(false);
+    })();
+  </script>
+
+  <!-- I-link mo dito ang repo.js -->
+  <script src="repo.js"></script>
+
+</body>
+</html>
